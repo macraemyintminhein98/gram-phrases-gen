@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gram Phrases</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <main class="container">
+        <article>
+            <hgroup>
+                <h1>Gram Phrases</h1>
+                <h2>Instantly generate engaging Instagram comments & captions.</h2>
+            </hgroup>
+            <form id="phrase-form">
+                <label for="topic">What's your post about?</label>
+                <input type="text" id="topic" name="topic" placeholder="e.g., beautiful sunset picture, new coffee shop" required>
+                <button type="submit">Generate Phrases (One-time $9.99)</button>
+            </form>
+            
+            <div id="results" style="display: none; margin-top: 2rem;">
+                <h3>Your Engaging Phrases:</h3>
+                <ul id="phrase-list"></ul>
+            </div>
+
+            <div id="error" style="display: none; margin-top: 1rem; color: var(--pico-color-red-500);"></div>
+        </article>
+    </main>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('pk_test_TYooMQauvdEDq54NiTgbpRQN'); // Replace with your actual publishable key
+        const form = document.getElementById('phrase-form');
+        const resultsDiv = document.getElementById('results');
+        const phraseList = document.getElementById('phrase-list');
+        const errorDiv = document.getElementById('error');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.style.display = 'none';
+            resultsDiv.style.display = 'none';
+            const topic = document.getElementById('topic').value;
+
+            try {
+                const response = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic })
+                });
+                const session = await response.json();
+
+                if (session.error) {
+                    errorDiv.textContent = session.error;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                const result = await stripe.redirectToCheckout({
+                    sessionId: session.id
+                });
+
+                if (result.error) {
+                    errorDiv.textContent = result.error.message;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'An unexpected error occurred. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        // This part would be handled by a server-side redirect after successful payment to display phrases
+        // For demo purposes, we'll simulate output here
+        const simulatePhrases = () => {
+            const phrases = [
+                "Stunning! This brightened my feed and my day! ✨",
+                "Absolutely captivating! What a beautiful moment you've captured.",
+                "Feeling those good vibes! Thanks for sharing this beauty!",
+                "Is it just me, or does this photo make you want to... [insert relevant activity]?",
+                "Pure magic! Living for these moments you share.",
+                "This is gorgeous! You've got an amazing eye for beauty.",
+                "Simply breathtaking. Major heart eyes for this post! 😍",
+                "Wow, just wow. What an incredible scene.",
+                "So much beauty in one frame! Love this.",
+                "This definitely needs to be in a frame! 🖼️"
+            ];
+            phraseList.innerHTML = '';
+            phrases.forEach(phrase => {
+                const li = document.createElement('li');
+                li.textContent = phrase;
+                phraseList.appendChild(li);
+            });
+            resultsDiv.style.display = 'block';
+        };
+        
+        // To simulate, uncomment the line below and visit index.html directly
+        // simulatePhrases(); 
+    </script>
+</body>
+</html>
